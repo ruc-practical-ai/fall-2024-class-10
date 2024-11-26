@@ -15,6 +15,10 @@ ipython = "^8.27.0"
 ipympl = "^0.9.4"
 scipy = "^1.14.1"
 latex = "^0.7.0"
+torch = "^2.5.1"
+torchvision = "^0.20.1"
+scikit-learn = "^1.5.2"
+adversarial-robustness-toolbox = "^1.18.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
