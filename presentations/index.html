@@ -19,18 +19,261 @@
 		<div class="slides">
 
 			<!-- Slides are separated by three dashes (the default) -->
-			<section data-markdown data-separator="$x">
+			<section data-markdown data-separator="^\n----\n$" data-separator-vertical="^\n--\n$">
 				<script type="text/template">
-					# Reveal.js Demos
+					## Class 10: Robustness and Adversarial AI
+					---
+					<img src="./images/ruc_practical_ai_logo.svg" style="display: block; margin: 0 auto; " alt="drawing" width="450"/>
 
+					----
+
+					## References
 					---
 
-					* Demo 1 - Markdown: [markdown.html](markdown.html)
-					* Demo 2 - Math: [math.html](math.html)
+					* [https://www.cleverhans.io/](https://www.cleverhans.io/) (Goodfellow and Papernot)
+					* [https://github.com/cleverhans-lab/cleverhans](https://github.com/cleverhans-lab/cleverhans)
+					* [https://github.com/Trusted-AI/adversarial-robustness-toolbox](Adversarial Robustness Toolbox)
 
+					----
+
+					## References
 					---
 
-					<img src="./images/ruc_practical_ai_logo.svg" style="display: block; margin: 0 auto; " alt="drawing" width="300"/>
+					* Explaining and Harnessing Adversarial Examples (Goodfellow *et al.*, 2014)
+					* Towards Compositional Adversarial Robustness: Generalizing Adversarial Training to Composite Semantic Performance (Hsiung *et al.*, 2023)
+
+					----
+
+					## Cleverhans (Goodfellow) Summary
+
+					----
+
+					## Motivation
+					---
+
+					* ML only started working well on meaningful tasks relatively recently
+					* ML failing used to be expected and ML success was the exception, but this has reversed as the field matures
+					* Now ML performs well on natural inputs, but not on unnatural ones
+					* Many cases that would never fool a human completely break some algorithms
+
+					--
+
+					[https://www.businessinsider.com/marines-fooled-darpa-robot-hiding-in-box-doing-somersaults-book-2023-1](https://www.businessinsider.com/marines-fooled-darpa-robot-hiding-in-box-doing-somersaults-book-2023-1)
+
+					*"Two of the Marines did somersaults for 300 meters. Two more hid under a cardboard box, giggling the entire time. Another took branches from a fir tree and walked along, grinning from ear to ear while pretending to be a tree, according to sources from Scharre's book."*
+
+					*"Not one of the eight was detected."*
+
+					----
+
+					## Definitions
+					---
+
+					* Adversarial AI focuses on security and privacy of ML
+					* **Security** - A secure system is one that can be depended upon and is guaranteed to behave as expected. (Garfinkle *et al.*, 2003)
+					* To break a machine learning model, an adversary can compromise confidentiality, integrity, and/or availability
+
+					--
+
+					* **Confidentiality**: an attacker can compromise confidentiality by inferring or causing the model to leak sensitive data
+					* **Integrity**: an attacker can compromise integrity by altering predictions to differ from intended ones
+					* **Availability**: an attacker can compromise availability by forcing a model to not make predictions, or triggering a failsafe mode
+
+					--
+
+					* **Whitebox**: adversary has full knowledge of the model (all weights and architecture)
+					* **Greybox**: adversary has some knowledge of the model (e.g., architecture or type of architecture but not weights)
+					* **Blackbox**: adversary has no knowledge of the model
+
+					----
+
+					## Types of Attacks
+					---
+
+					* Poison Data
+						- Perturb training points to increase error in production
+						- Many models usually though to be robust (SVMs) are vulnerable
+						- Properties usually desirable of ML models (convex loss functions) make poison data execution easier
+						- Controlling the data controls the model
+
+					--
+
+					* Adversarial Examples
+						- Perturb inputs to minimize a specific norm ($L_1$, $L_2$, $L_{\infty}$) in the input while maximizing error at the output
+						- Training data does not need to be changed; slight and undetectable by humans
+						- Many attacks require whitebox access but not all
+						- Common strategy is to steal a model first to turn a blackbox attack into a whitebox attack
+
+					--
+
+					* Membership Inference
+						- Checking if a particular data point was used in training a model
+						- Work by searching for points classified with high confidence
+						- Raises privacy concerns if data was sensitive
+
+					--
+
+					* Model Stealing
+						- Can be used as a powerful attack in combination with other attacks
+						- Involves interrogating a model by stimulating it with inputs and saving outputs
+						- Then input output pairs form a set of $(X,\ y)$ pairs which can train a new model
+						- Training a model from I/O pairs is easier than training from raw data (I/O pairs include information learned by first model)
+
+					----
+
+					## Defenses
+					---
+
+					* Adversarial Training
+						- Seeks to improve robustness against adversarial examples by introducing adversarial examples during training
+						- Can be more effective in smoothing model manifolds than conventional regularization (e.g., weight decay)
+
+					--
+
+					* Defensive Distillation
+						- Applies distillation (Hinton *et al.*), i.e., smoothing a model by training a new model from the outputs of an existing model
+						- Distillation is easier than training from scratch because soft outputs of the source model contain information learned and pass this to the target model
+						- Does not need a smaller model; training from soft labels (smooth target function) creates smoother surface than hard labels
+						- Analogy: fitting a polynomial or Fourier series to a hard window yields Gibbs oscillations
+
+					--
+
+					* Gradient Masking
+						- Gradient can be removed from the model interface trivially
+						- Makes it harder for the adversary to solve the optimization problem since the label function (and therefore the manifold learned by the adversary) will not be smooth
+						- Does nothing to make the model more robust, since only the output interface is changed
+
+					----
+
+					## Flaws in These Defenses
+					---
+
+					* Gradient masking does not stop the attacker from distilling their own model and optimizing adversarial examples against this model
+					* These examples transfer to the source model
+					* Unfortunately for the defender, adversarial training and defensive distillation both fall victim to combination attacks that employ model stealing as the opening move
+					* Transferability of adversarial attacks implies adversary can always steal a more vulnerable model and "practice" attacks on it
+
+					----
+
+					## Why Defense is Hard
+					---
+
+					* Since generating attacks requires solving a nonlinear optimization problem, it is hard to analyze attacks and determine
+					* Nested nonlinearity = difficult analysis
+					* High dimensionality = vulnerability to smaller perturbations
+					* Adversarial examples generate *unnatural inputs*; being robust to these worst case inputs necessitates being robust to all inputs
+
+					--
+
+					Goodfellow: *"In physical conflict, attackers seem to have the advantage. It is much easier to build a nuclear bomb than to build a city that is able to withstand a nuclear explosion. The second law of thermodynamics seems to imply that, if defending requires maintaining entropy below some threshold, then the defender must eventually lose as entropy increases over time, even if there is no explicit adversary intentionally causing this increase in entropy."*
+
+					--
+
+					Goodfellow: *"The no free lunch theorem for supervised learning [W96] says that, averaged over all possible datasets, no machine learning algorithm does better on new points at test time than any other algorithm. At first glance, this seems to suggest that all algorithms are equally vulnerable to adversarial examples. However, the no free lunch theorem applies only when we make no assumption about the structure of the problem. When we study adversarial examples, we assume that small perturbations of the input should not change the output class, so the no free lunch theorem in its typical form does not apply."*
+
+					----
+
+					## Testing and Verification
+					---
+
+					* **Testing:** *"evaluating the system in several conditions and observing its behavior, watching for defects"*
+					* **Verification:** *"producing a compelling argument that the system will not misbehave under a very broad range of circumstances"*
+
+					--
+
+					* ML practitioners rely primarily on testing
+					* Statistics can be used to analyze uncertainty of model outputs given uncertainty of model inputs, but swing in output uncertainty is generally too large to be practical
+					* True security requires both (1) proper input validation and (2) verification (rather than mere testing)
+
+					----
+
+					## Insufficiency of Testing
+					---
+
+					* Testing provides *lower bounds* on performance; verification provides *upper bounds*
+					* Testing identifies at least $n$ inputs that fail; verification identifies *at most* $n$ inputs that fail
+
+					----
+
+					Dijkstra *"Testing shows the presence, not the absence of bugs."*
+
+					----
+
+					## State of the Art
+					---
+
+					* ML requires verification, but so far verification is *not* a solved problem
+					* Practitioners must rely on guardrails, user controls, and I/O validation to ensure ML output does not cause harm
+					* Goodfellow: development of a guarantee characterizing the space of inputs that are processed correctly is central to the future of ML in adversarial settings (2017 - still true today)
+
+					----
+
+					## Verification Challenges
+					---
+
+					* Current verification methods only verify the output class remains constant in some specified neighborhood about the sample
+					* Exhaustively enumerating all points for which a class should remain constant is a challenge
+					* The neighborhoods in which classes remain constant are defined as $L_p$ norms, but natural neighborhoods are not so well defined
+
+					----
+
+					## Model Stealing Defenses
+					---
+
+					* A basic defense sacrifices accuracy to make model stealing more difficult by introducing label noise
+					* A better input validation approach prevents out of the ordinary inputs from stimulating the model, preventing sufficient stimuli coverage to steal the model
+					* Requiring proof of work (solving a computationally hard puzzle) can slow I/O pair extraction to impede model theft
+
+					----
+
+					## Adversarial AI Tools
+
+					----
+
+					## Cleverhans
+					---
+					* Goodfellow developed and historically significant
+					* Aims to include the best implementations of attacks and defenses for researchers to test against and prove SOTA
+					* Not as actively maintained as some of the newer adversarial AI tool kits
+
+					----
+
+					## Adversarial Robustness Toolkit
+					---
+
+					* Well maintained, active commits
+					* Thousands of users; active community, very few clone and own forks
+					* Hosted by Linux Open Source Foundation in AI and Data
+					* Partially funded by DARPA
+					* Recommended in this class
+
+					--
+
+					* Includes tools for red and blue teams
+					* Covers evasion, poisoning, inference, extraction
+					* Numerous examples for many modern ML packages
+
+					----
+
+					## Advertorch
+					---
+
+					* Last commit two years ago, not as actively maintained
+					* Most commits from several years ago
+					* Most forks are clone and owns into academic projects or defunct industry projects
+
+					--
+
+					* Used by Microsoft RobustDG (appears not actively maintained)
+
+					----
+
+					## Discussion / introduction: Fast Gradient Sign Attack (Goodfellow, 2015)
+
+					----
+
+					<img src="./images/ruc_practical_ai_logo.svg" style="display: block; margin: 0 auto; " alt="drawing" width="1400"/>
+
                 </script>
 			</section>
 		</div>
